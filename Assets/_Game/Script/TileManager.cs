@@ -4,35 +4,55 @@ using UnityEngine;
 
 public class TileManager : MonoBehaviour {
 
-    int rowSize;
-
+    int rowSize; //same as private
+    public float shuffleSpeed = 0.05f;
+    public float moveSpeed = 0.2f;
+    public int shuffleCount = 1;
     public List<TileController> tiles;
+    bool inputLock = false;
 
     private void Start() {
         rowSize = (int) Mathf.Sqrt(tiles.Count);
-        ShuffleBoard();
+        StartCoroutine(Shuffle());
     }
 
-    void ShuffleBoard() {
-        for (int i = 0; i < 100; i++) {
-            TilePressed(tiles[Random.Range(0, tiles.Count)]);
+    IEnumerator Shuffle() {
+        for (int i = 0; i < shuffleCount;) {
+            if (TilePressed(tiles[Random.Range(0, tiles.Count)], true)){
+                i++;
+                yield return new WaitForSeconds(shuffleSpeed);
+            }
         }
     }
 
-    public void TilePressed(TileController tile) {
+    public bool TilePressed(TileController tile, bool shuffle) {
+        if (inputLock)
+            return false;
+
         TileController emptyNeighbour = EmptyNeighbour(tile);
-        if (emptyNeighbour != null)
-            SwitchTiles(tile, emptyNeighbour);
+        if (emptyNeighbour == null)
+            return false;
+
+        float speed = shuffle ? shuffleSpeed : moveSpeed;
+        SwitchTiles(tile, emptyNeighbour, speed);
+        return true;
     }
 
-    void SwitchTiles(TileController tile1, TileController tile2) {
+    void SwitchTiles(TileController tile1, TileController tile2, float speed) {
+        inputLock = true;
+
         //Switch fysical objects and animate
         Vector3 pos = tile1.gameObject.transform.position;
 
-        //LeanTween.move(tile1.gameObject, tile2.gameObject.transform.position, 0.2f).setEase(LeanTweenType.easeInBack);
-        //LeanTween.move(tile2.gameObject, pos, 0.2f).setEase(LeanTweenType.easeInCubic);
-        tile1.gameObject.transform.position = tile2.gameObject.transform.position;
-        tile2.gameObject.transform.position = pos;
+        LeanTween.move(tile1.gameObject, tile2.gameObject.transform.position, speed)
+                 .setEase(LeanTweenType.easeInCubic)
+                 .setOnComplete(() => { 
+                    inputLock = false; 
+        });
+        LeanTween.move(tile2.gameObject, pos, speed).
+                 setEase(LeanTweenType.easeInCubic);
+        //tile1.gameObject.transform.position = tile2.gameObject.transform.position;
+        //tile2.gameObject.transform.position = pos;
 
         //Switch in list
         int index1 = TileIndex(tile1);

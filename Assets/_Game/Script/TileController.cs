@@ -10,7 +10,7 @@ public class TileController : MonoBehaviour {
 
     private void OnMouseDown()
     {
-        tileManager.TilePressed(this);
+        tileManager.TilePressed(this, false);
     }
 
 
